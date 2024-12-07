@@ -27,7 +27,7 @@ def chatbot():
         st.session_state.conversation_history.append({"role": "user", "content": user_input})
 
         # Prepare the correct payload
-        payload = {"question": user_input}  # Adjust to match API needs
+        payload = {"conversation": user_input}  # Adjust to match API needs
         
         try:
             # Send the request

@@ -17,7 +17,7 @@ S3_BUCKET_NAME = 'healthcare-chatbot-hpuppala'
 
 # API URLs
 API_URLS = {
-    "Q/A": "https://1595-34-46-179-230.ngrok-free.app/qa",
+    "Q/A": "https://5424-34-143-161-193.ngrok-free.app/qa",
     "Medical Document Summarization": "https://0a87-34-143-239-88.ngrok-free.app/summarize",
     "Conversation Interpretation": "https://0a87-34-143-239-88.ngrok-free.app/conv_interpretation"
 }
