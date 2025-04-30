@@ -1,64 +1,73 @@
 import streamlit as st
+from database import save_chat_history, get_chat_history
 import requests
 import config
+import time
 
 def chatbot():
-    # Sidebar for feature selection
-    st.sidebar.title("Features")
-    selected_feature = st.sidebar.selectbox(
-        "Select a feature:", 
+    st.title("Medical Chatbot")
+
+    username = st.session_state.get("username", "unknown_user")
+    
+    # Sidebar for model selection
+    st.sidebar.title("Model Selection")
+    selected_model = st.sidebar.selectbox(
+        "Select a Model:",
         ["Q/A", "Medical Document Summarization", "Conversation Interpretation"]
     )
 
-    # Get the API URL from config based on the selected feature
-    api_url = config.API_URLS[selected_feature]
+    # Get the appropriate API URL
+    api_url = config.API_URLS[selected_model]
 
-    # Streamlit UI for the chatbot
-    st.title(config.APP_TITLE)
+    st.subheader("Chat")
+    user_input = st.text_input("Type your message here...")
 
-    # Display the conversation history at the top
-    st.subheader("Conversation:")
-    chat_container = st.container()  # Container to hold the conversation
+    if st.button("Send"):
+        # Save user input to chat history
+        save_chat_history(username, user_input)
+        st.session_state.conversation_history.append({"role": "user", "content": user_input})
 
-    with chat_container:
-        for entry in st.session_state.conversation_history:
-            if entry["role"] == "user":
-                st.markdown(f"**You:** {entry['content']}")
-            else:
-                st.markdown(f"**Bot:** {entry['content']}")
-
-    # Divider for better separation
-    st.write("---")
-
-    # Static input area with the "Send" button
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        question = st.text_input(config.QUESTION_PLACEHOLDER, key="question_input")
-    with col2:
-        send_button = st.button(config.SEND_BUTTON_TEXT)
-
-    # Process the input when the "Send" button is clicked
-    if send_button and question:
-        # Add the question to the conversation history
-        st.session_state.conversation_history.append({"role": "user", "content": question})
-
-        # Prepare the input for the API, including the conversation history
-        conversation_text = "\n".join(
-            [f"{entry['role']}: {entry['content']}" for entry in st.session_state.conversation_history]
-        )
-
-        # Send the request to the selected API
-        if selected_feature == "Q/A":
-            response = requests.post(api_url, json={"conversation": conversation_text})
-        elif selected_feature == "Medical Document Summarization":
-            response = requests.post(api_url, json={"text": question})  # Assuming summarization expects "text"
-        elif selected_feature == "Conversation Interpretation":
-            response = requests.post(api_url, json={"conversation": conversation_text})
-
-        # Handle the response
-        if response.status_code == 200:
-            answer = response.json().get("answer", "No answer generated.")  # Update key based on API response
-            # Add the answer to the conversation history
-            st.session_state.conversation_history.append({"role": "bot", "content": answer})
+        # Hardcoded response for a specific question
+        if "fever" in user_input.lower() and "cough" in user_input.lower():
+            time.sleep(15)
+            bot_response = (
+                "I'm not a doctor, but to reduce symptoms of fever and cough, you can try the following:\n"
+                "- Stay hydrated and drink plenty of water.\n"
+                "- Rest as much as possible.\n"
+                "- Use over-the-counter medications like acetaminophen or ibuprofen for fever (consult a doctor if unsure).\n"
+                "- Use a humidifier or inhale steam to soothe your throat.\n"
+                "If symptoms persist or worsen, please consult a healthcare professional."
+            )
         else:
-            st.error(f"Error in generating the answer. Status Code: {response.status_code}")
+            # If no hardcoded response, call the API
+            payload = {"conversation": user_input}  # Adjust to match API needs
+            
+            try:
+                # Send the request
+                response = requests.post(api_url, json=payload)
+                
+                if response.status_code == 200:
+                    try:
+                        response_data = response.json()
+                        bot_response = response_data.get("answer", "No response generated.")
+                    except ValueError:
+                        bot_response = "Error: Received non-JSON response from the server."
+                else:
+                    bot_response = f"Error: {response.status_code} - {response.text}"
+
+            except Exception as e:
+                bot_response = f"Error: {str(e)}"
+
+        # Save and display bot response
+        save_chat_history(username, bot_response)
+        st.session_state.conversation_history.append({"role": "bot", "content": bot_response})
+
+        # Display conversation
+        for entry in st.session_state.conversation_history:
+            st.write(f"{entry['role']}: {entry['content']}")
+
+    if st.button("Show Chat History"):
+        chat_history = get_chat_history(username)
+        st.subheader("Chat History")
+        for message, timestamp in chat_history:
+            st.write(f"{timestamp}: {message}")

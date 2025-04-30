@@ -6,7 +6,7 @@ USER_CREDENTIALS = {
     "user2": "password456"
 }
 
-def login():
+def testlogin():
     st.title("Login to Access the Chatbot")
 
     # Input fields for username and password
