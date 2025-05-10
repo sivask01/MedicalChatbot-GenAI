@@ -199,6 +199,10 @@ elif st.session_state.page == "contact":
     Department of Computer Engineering  
     San José State University  
     📧 Email: sjsu.healthbot.project@gmail.com
+    
+    **Test User Credentials:**
+    - Username: `user1`
+    - Password: `password123`
     """)
 elif st.session_state.page == "sign_up":
     signup()
